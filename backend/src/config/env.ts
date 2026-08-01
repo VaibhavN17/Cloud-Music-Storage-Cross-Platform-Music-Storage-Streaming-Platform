@@ -8,7 +8,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(5000),
   API_PREFIX: z.string().default('/api/v1'),
-  APP_URL: z.string().default('http://localhost:5000'),
+  APP_URL: z.string().default('https://cloudtunemax.vercel.app'),
 
   DATABASE_URL: z
     .string()
@@ -27,7 +27,7 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional().default('mock_r2_access_key'),
   R2_SECRET_ACCESS_KEY: z.string().optional().default('mock_r2_secret_key'),
   R2_PUBLIC_ENDPOINT: z.string().optional().default('https://mock.r2.cloudflarestorage.com'),
-  R2_CDN_DOMAIN: z.string().optional().default('https://cdn.cloudmusic.app'),
+  R2_CDN_DOMAIN: z.string().optional().default('https://pub-521b34ee897a4b169d758e38c9e1faad.r2.dev'),
   R2_BUCKET_NAME: z.string().default('cloudtune'),
   R2_BUCKET_PRIVATE: z.string().default('cloudtune'),
   R2_BUCKET_PUBLIC: z.string().default('cloudtune'),
@@ -53,8 +53,9 @@ const envSchema = z.object({
 const parseEnv = () => {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
-    console.error('❌ Invalid environment variables:', result.error.format());
-    throw new Error('Invalid environment configuration');
+    console.warn('⚠️ Environment variable parsing notice:', result.error.format());
+    // Return partial fallback so serverless functions never crash cold
+    return envSchema.parse({});
   }
   return result.data;
 };

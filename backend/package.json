@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "npx ts-node-dev --respawn --transpile-only --exit-child src/server.ts",
     "worker:dev": "npx ts-node-dev --respawn --transpile-only --exit-child src/workers/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "vercel-build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "start:worker": "node dist/workers/index.js",
     "prisma:generate": "prisma generate",
