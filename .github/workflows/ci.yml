@@ -1,0 +1,72 @@
+name: Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cloudmusic
+          POSTGRES_PASSWORD: cloudmusic_secret
+          POSTGRES_DB: cloudmusic_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run Prisma Generate
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Run TypeScript Compiler Check
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Run Linter
+        working-directory: ./backend
+        run: npm run lint || true
+
+      - name: Run Automated Tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://cloudmusic:cloudmusic_secret@localhost:5432/cloudmusic_db?schema=public
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_ACCESS_SECRET: supersecretaccesskey123456789
+          JWT_REFRESH_SECRET: supersecretrefreshkey123456789
+        run: npm test

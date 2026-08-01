@@ -8,3 +8,19 @@ Thumbs.db
 # Build and temporary files
 *.log
 .gemini/
+
+# Node
+node_modules/
+dist/
+.env
+
+# Flutter / Dart
+build/
+.dart_tool/
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+cloud_music_storage/build/
+cloud_music_storage/android/build/
+cloud_music_storage/.dart_tool/

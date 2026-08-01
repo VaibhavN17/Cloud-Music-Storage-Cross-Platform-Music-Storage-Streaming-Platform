@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ARTIST
+  MODERATOR
+  ADMIN
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+  UNLISTED
+}
+
+enum ReportType {
+  ABUSE
+  DMCA
+  COPYRIGHT
+  SPAM
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum NotificationType {
+  NEW_FOLLOWER
+  TRACK_LIKE
+  NEW_COMMENT
+  SYSTEM_ALERT
+  REPORT_UPDATE
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String?
+  displayName       String
+  avatarUrl         String?
+  bio               String?
+  role              Role      @default(USER)
+  emailVerified     Boolean   @default(false)
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?
+  storageUsedBytes  BigInt    @default(0)
+  storageQuotaBytes BigInt    @default(5368709120) // 5GB default
+  suspended         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  // Social & Auth OAuth IDs
+  googleId          String?   @unique
+  appleId           String?   @unique
+
+  tracks            Track[]
+  folders           Folder[]
+  playlists         Playlist[]
+  favorites         Favorite[]
+  comments          Comment[]
+  reportsFiled      Report[]            @relation("ReportsFiled")
+  reportsReceived   Report[]            @relation("ReportsReceived")
+  refreshTokens     RefreshToken[]
+  followers         Follow[]            @relation("Following")
+  following         Follow[]            @relation("Follower")
+  playbackHistory   PlaybackHistory[]
+  notifications     Notification[]
+  storageUsage      StorageUsage[]
+  sessions          Session[]
+  settings          Settings?
+
+  @@index([email])
+  @@index([role])
+}
+
+model Track {
+  id                  String            @id @default(cuid())
+  ownerId             String
+  owner               User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  folderId            String?
+  folder              Folder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  title               String
+  artist              String?
+  album               String?
+  genre               String?
+  composer            String?
+  year                Int?
+  trackNumber         Int?
+  discNumber          Int?
+  isrc                String?
+  lyrics              String?
+  bitrate             Int?
+  durationMs          Int?
+  fileKey             String            // R2 object key
+  artworkKey          String?
+  fileSizeBytes       BigInt
+  format              String            // mp3, wav, flac, aac, ogg, m4a
+  visibility          Visibility        @default(PRIVATE)
+  ownershipAttestedAt DateTime?
+
+  playCount           Int               @default(0)
+  likeCount           Int               @default(0)
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?         // soft delete / trash
+
+  playlistTracks      PlaylistTrack[]
+  favorites           Favorite[]
+  comments            Comment[]
+  reports             Report[]
+  playbackHistory     PlaybackHistory[]
+
+  @@index([ownerId])
+  @@index([folderId])
+  @@index([visibility])
+  @@index([title])
+  @@index([artist])
+  @@index([genre])
+  @@index([deletedAt])
+  @@index([visibility, deletedAt])
+}
+
+model Folder {
+  id        String    @id @default(cuid())
+  ownerId   String
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Folder?   @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]  @relation("FolderTree")
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete
+
+  tracks    Track[]
+
+  @@index([ownerId])
+  @@index([parentId])
+}
+
+model Playlist {
+  id          String          @id @default(cuid())
+  ownerId     String
+  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  coverUrl    String?
+  visibility  Visibility      @default(PRIVATE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tracks      PlaylistTrack[]
+
+  @@index([ownerId])
+  @@index([visibility])
+}
+
+model PlaylistTrack {
+  id          String   @id @default(cuid())
+  playlistId  String
+  playlist    Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  trackId     String
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  position    Int
+  addedAt     DateTime @default(now())
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+  @@index([trackId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, trackId])
+  @@index([userId])
+}
+
+model Follow {
+  id           String   @id @default(cuid())
+  followerId   String
+  follower     User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId  String
+  following    User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  trackId   String
+  track     Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([trackId])
+  @@index([authorId])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  type           ReportType
+  status         ReportStatus @default(OPEN)
+  trackId        String?
+  track          Track?       @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  reporterId     String
+  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId String?
+  reportedUser   User?        @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  reason         String
+  evidenceUrl    String?
+  resolvedById   String?
+  resolutionNote String?
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+
+  @@index([status])
+  @@index([type])
+  @@index([reporterId])
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  revoked    Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+}
+
+model PlaybackHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId     String
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  playedAt    DateTime @default(now())
+  durationSec Int
+  deviceInfo  String?
+
+  @@index([userId])
+  @@index([trackId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([read])
+}
+
+model StorageUsage {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usedBytes  BigInt
+  quotaBytes BigInt
+  recordedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Settings {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications  Boolean @default(true)
+  pushNotifications   Boolean @default(true)
+  autoPlayNext        Boolean @default(true)
+  audioQuality        String  @default("high")
+  theme               String  @default("dark")
+}
