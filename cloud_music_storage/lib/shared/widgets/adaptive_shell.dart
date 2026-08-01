@@ -236,10 +236,14 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const Icon(
-                        Iconsax.music,
-                        color: AppColors.primary,
-                        size: 28,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/app_logo.png',
+                          width: 28,
+                          height: 28,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                       if (_isExpanded) ...[
                         const SizedBox(width: 12),
