@@ -6,6 +6,22 @@ import { sendSuccess, sendError } from '../utils/response';
 
 const router = Router();
 
+router.get('/', (_req: Request, res: Response) => {
+  sendSuccess(
+    res,
+    {
+      name: 'Cloud Music Storage API',
+      version: 'v1',
+      status: 'online',
+      documentation: '/api-docs',
+      health: '/health',
+      readiness: '/ready',
+      apiPrefix: '/api/v1',
+    },
+    'Welcome to Cloud Music Storage Enterprise API'
+  );
+});
+
 router.get('/health', async (_req: Request, res: Response) => {
   sendSuccess(res, { status: 'pass', uptime: process.uptime() }, 'Service is healthy');
 });
