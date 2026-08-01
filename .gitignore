@@ -1,0 +1,10 @@
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Build and temporary files
+*.log
+.gemini/
