@@ -36,7 +36,7 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveOnPressed = (isLoading || isDisabled) ? null : onPressed;
 
-    Widget child = Row(
+    final child = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

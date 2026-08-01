@@ -228,7 +228,7 @@ class _HorizontalTrackList extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 6,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
           return _TrackCard(index: index);
         },
@@ -317,7 +317,7 @@ class _HorizontalPlaylistList extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 4,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
           final names = ['Workout Mix', 'Chill Vibes', 'Road Trip', 'Focus'];
           final counts = ['24 tracks', '18 tracks', '32 tracks', '12 tracks'];

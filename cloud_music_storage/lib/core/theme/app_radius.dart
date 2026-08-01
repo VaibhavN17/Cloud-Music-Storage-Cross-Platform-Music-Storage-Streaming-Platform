@@ -27,7 +27,7 @@ class AppRadius {
   static final BorderRadius imageRadius = BorderRadius.circular(sm);
 
   /// Top-only radius for bottom sheets and modals.
-  static final BorderRadius sheetTopRadius = BorderRadius.only(
+  static const BorderRadius sheetTopRadius = BorderRadius.only(
     topLeft: Radius.circular(xl),
     topRight: Radius.circular(xl),
   );

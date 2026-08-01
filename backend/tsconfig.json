@@ -3,7 +3,9 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -24,24 +26,62 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@config/*": ["src/config/*"],
-      "@routes/*": ["src/routes/*"],
-      "@controllers/*": ["src/controllers/*"],
-      "@services/*": ["src/services/*"],
-      "@repositories/*": ["src/repositories/*"],
-      "@middlewares/*": ["src/middlewares/*"],
-      "@validators/*": ["src/validators/*"],
-      "@dto/*": ["src/dto/*"],
-      "@interfaces/*": ["src/interfaces/*"],
-      "@types/*": ["src/types/*"],
-      "@workers/*": ["src/workers/*"],
-      "@events/*": ["src/events/*"],
-      "@queues/*": ["src/queues/*"],
-      "@utils/*": ["src/utils/*"],
-      "@storage/*": ["src/storage/*"],
-      "@modules/*": ["src/modules/*"]
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@routes/*": [
+        "src/routes/*"
+      ],
+      "@controllers/*": [
+        "src/controllers/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@repositories/*": [
+        "src/repositories/*"
+      ],
+      "@middlewares/*": [
+        "src/middlewares/*"
+      ],
+      "@validators/*": [
+        "src/validators/*"
+      ],
+      "@dto/*": [
+        "src/dto/*"
+      ],
+      "@interfaces/*": [
+        "src/interfaces/*"
+      ],
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@workers/*": [
+        "src/workers/*"
+      ],
+      "@events/*": [
+        "src/events/*"
+      ],
+      "@queues/*": [
+        "src/queues/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@storage/*": [
+        "src/storage/*"
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests/**/*"
+  ]
 }

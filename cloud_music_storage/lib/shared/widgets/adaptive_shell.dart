@@ -236,7 +236,7 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Iconsax.music,
                         color: AppColors.primary,
                         size: 28,

@@ -20,7 +20,7 @@ class AppTheme {
   // ────────────────────────────────────────────────────────────────────────
 
   static ThemeData get dark {
-    final colorScheme = ColorScheme.dark(
+    const colorScheme = ColorScheme.dark(
       primary: AppColors.primary,
       onPrimary: Colors.white,
       primaryContainer: AppColors.primaryDark,
@@ -226,7 +226,7 @@ class AppTheme {
       ),
 
       // ── Bottom Sheet ──
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.darkSurface,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.sheetTopRadius),
         elevation: 0,
@@ -321,7 +321,7 @@ class AppTheme {
   // ────────────────────────────────────────────────────────────────────────
 
   static ThemeData get light {
-    final colorScheme = ColorScheme.light(
+    const colorScheme = ColorScheme.light(
       primary: AppColors.primary,
       onPrimary: Colors.white,
       primaryContainer: AppColors.primaryLight,
@@ -333,7 +333,7 @@ class AppTheme {
       error: AppColors.error,
       onError: Colors.white,
       outline: AppColors.lightBorder,
-      shadow: const Color(0x1A000000),
+      shadow: Color(0x1A000000),
     );
 
     return ThemeData(
@@ -530,7 +530,7 @@ class AppTheme {
       ),
 
       // ── Bottom Sheet ──
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.lightSurface,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.sheetTopRadius),
         elevation: 0,

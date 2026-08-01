@@ -85,7 +85,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.verified_user_outlined,
                     size: 48,
                     color: AppColors.primary,

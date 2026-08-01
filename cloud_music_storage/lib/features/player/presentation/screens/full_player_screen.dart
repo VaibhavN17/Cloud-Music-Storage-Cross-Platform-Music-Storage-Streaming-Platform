@@ -327,7 +327,7 @@ class FullPlayerScreen extends ConsumerWidget {
   void _showSpeedPicker(BuildContext context, WidgetRef ref, double currentSpeed) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.sheetTopRadius),
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheetTopRadius),
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(AppSpacing.lg),

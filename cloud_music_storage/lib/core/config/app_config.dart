@@ -9,18 +9,18 @@ enum Environment { dev, staging, prod }
 class AppConfig {
   const AppConfig._();
 
-  /// Current environment — change this for builds.
-  static const Environment environment = Environment.dev;
+  /// Current environment — set to prod for Vercel backend integration.
+  static const Environment environment = Environment.prod;
 
   /// API base URL per environment.
   static String get apiBaseUrl {
     switch (environment) {
       case Environment.dev:
-        return 'http://localhost:4000';
+        return 'https://cloudtunemax.vercel.app/api/v1';
       case Environment.staging:
-        return 'https://staging-api.cloudmusic.app';
+        return 'https://cloudtunemax.vercel.app/api/v1';
       case Environment.prod:
-        return 'https://api.cloudmusic.app';
+        return 'https://cloudtunemax.vercel.app/api/v1';
     }
   }
 
@@ -57,8 +57,8 @@ class AppConfig {
   /// Feature flags.
   static const bool enableGoogleSignIn = true;
   static const bool enableAppleSignIn = true;
-  static const bool enable2FA = false; // Future scope
-  static const bool enableEqualizer = false; // Future scope
-  static const bool enableLyrics = false; // Future scope
-  static const bool enableSocketSync = false; // Future scope
+  static const bool enable2FA = false;
+  static const bool enableEqualizer = false;
+  static const bool enableLyrics = true;
+  static const bool enableSocketSync = false;
 }

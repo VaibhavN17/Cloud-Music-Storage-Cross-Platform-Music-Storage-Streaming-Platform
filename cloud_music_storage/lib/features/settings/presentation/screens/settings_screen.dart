@@ -38,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
         children: [
           // ── Appearance ──
-          _SectionHeader(title: 'Appearance'),
+          const _SectionHeader(title: 'Appearance'),
           _SettingsTile(
             icon: Iconsax.moon,
             title: 'Theme',
@@ -51,7 +51,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
 
           // ── Playback ──
-          _SectionHeader(title: 'Playback'),
+          const _SectionHeader(title: 'Playback'),
           _SettingsTile(
             icon: Iconsax.music,
             title: 'Audio Quality',
@@ -68,7 +68,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
 
           // ── Downloads ──
-          _SectionHeader(title: 'Downloads'),
+          const _SectionHeader(title: 'Downloads'),
           _SettingsTile(
             icon: Iconsax.arrow_down_2,
             title: 'Download Quality',
@@ -90,7 +90,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
 
           // ── Account ──
-          _SectionHeader(title: 'Account'),
+          const _SectionHeader(title: 'Account'),
           _SettingsTile(
             icon: Iconsax.shield_tick,
             title: 'Privacy & Security',
@@ -111,7 +111,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
 
           // ── About ──
-          _SectionHeader(title: 'About'),
+          const _SectionHeader(title: 'About'),
           _SettingsTile(
             icon: Iconsax.info_circle,
             title: 'About',

@@ -61,7 +61,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.xl),
 
             // Stats row
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _StatItem(label: 'Tracks', value: '0'),

@@ -45,9 +45,9 @@ class ApiClient {
     final dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: Duration(milliseconds: AppConfig.connectTimeout),
-        receiveTimeout: Duration(milliseconds: AppConfig.receiveTimeout),
-        sendTimeout: Duration(milliseconds: AppConfig.sendTimeout),
+        connectTimeout: const Duration(milliseconds: AppConfig.connectTimeout),
+        receiveTimeout: const Duration(milliseconds: AppConfig.receiveTimeout),
+        sendTimeout: const Duration(milliseconds: AppConfig.sendTimeout),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -59,8 +59,8 @@ class ApiClient {
     final tokenDio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: Duration(milliseconds: AppConfig.connectTimeout),
-        receiveTimeout: Duration(milliseconds: AppConfig.receiveTimeout),
+        connectTimeout: const Duration(milliseconds: AppConfig.connectTimeout),
+        receiveTimeout: const Duration(milliseconds: AppConfig.receiveTimeout),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
