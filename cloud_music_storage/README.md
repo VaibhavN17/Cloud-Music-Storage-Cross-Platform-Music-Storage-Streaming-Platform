@@ -1,4 +1,4 @@
-# Cloud Music Storage — Flutter Client
+# Cloud Music Storage — Flutter Client : cloudtune
 
 A production-grade, cross-platform cloud music storage and streaming application built with Flutter.
 

@@ -12,10 +12,11 @@ export const r2Client = new S3Client({
 });
 
 export const R2_BUCKETS = {
-  PRIVATE: env.R2_BUCKET_PRIVATE,
-  PUBLIC: env.R2_BUCKET_PUBLIC,
-  ARTWORK: env.R2_BUCKET_ARTWORK,
-  TEMP: env.R2_BUCKET_TEMP,
+  NAME: env.R2_BUCKET_NAME || 'cloudtune',
+  PRIVATE: env.R2_BUCKET_PRIVATE || env.R2_BUCKET_NAME || 'cloudtune',
+  PUBLIC: env.R2_BUCKET_PUBLIC || env.R2_BUCKET_NAME || 'cloudtune',
+  ARTWORK: env.R2_BUCKET_ARTWORK || env.R2_BUCKET_NAME || 'cloudtune',
+  TEMP: env.R2_BUCKET_TEMP || env.R2_BUCKET_NAME || 'cloudtune',
 } as const;
 
 export const R2_STORAGE_PATHS = {
@@ -30,10 +31,10 @@ export const R2_STORAGE_PATHS = {
 
 export async function checkR2Connection(): Promise<boolean> {
   try {
-    await r2Client.send(new HeadBucketCommand({ Bucket: R2_BUCKETS.PRIVATE }));
+    await r2Client.send(new HeadBucketCommand({ Bucket: R2_BUCKETS.NAME }));
     return true;
   } catch (error) {
-    logger.warn({ error }, 'R2 health check returned warning or error (may be using dev mocks)');
+    logger.warn({ error }, 'R2 health check returned warning or error (may be using dev mocks or uninitialized bucket)');
     return true; // Non-fatal for dev offline mode
   }
 }
