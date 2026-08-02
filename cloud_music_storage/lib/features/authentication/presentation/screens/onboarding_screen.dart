@@ -3,24 +3,25 @@
 /// Three-page intro showcasing key features before auth.
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/theme_extension.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
 
@@ -66,6 +67,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  void _finishOnboarding() {
+    ref.read(onboardingCompleteProvider.notifier).state = true;
+    context.go(RoutePaths.login);
+  }
+
   void _onNext() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
@@ -73,7 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: AppAnimations.pageCurve,
       );
     } else {
-      context.go(RoutePaths.login);
+      _finishOnboarding();
     }
   }
 
@@ -89,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: TextButton(
-                  onPressed: () => context.go(RoutePaths.login),
+                  onPressed: _finishOnboarding,
                   child: Text(
                     'Skip',
                     style: AppTypography.bodyMedium(

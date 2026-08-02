@@ -26,23 +26,39 @@ import '../../shared/widgets/adaptive_shell.dart';
 import 'route_names.dart';
 
 /// Provider for auth state — determines route redirects.
-/// This will be properly connected to the auth feature later.
 final authStateProvider = StateProvider<bool>((ref) => false);
 
 /// Provider for onboarding completion state.
 final onboardingCompleteProvider = StateProvider<bool>((ref) => false);
 
+/// Listenable notifier to trigger GoRouter redirects without destroying the router instance.
+class RouterNotifier extends ChangeNotifier {
+  RouterNotifier(this._ref) {
+    _ref.listen<bool>(authStateProvider, (_, __) => notifyListeners());
+    _ref.listen<bool>(onboardingCompleteProvider, (_, __) => notifyListeners());
+  }
+
+  final Ref _ref;
+}
+
+final routerNotifierProvider = Provider<RouterNotifier>((ref) {
+  return RouterNotifier(ref);
+});
+
 /// Main router provider.
 final routerProvider = Provider<GoRouter>((ref) {
-  final isAuthenticated = ref.watch(authStateProvider);
-  final onboardingComplete = ref.watch(onboardingCompleteProvider);
+  final notifier = ref.watch(routerNotifierProvider);
 
   return GoRouter(
     debugLogDiagnostics: true,
     initialLocation: RoutePaths.splash,
+    refreshListenable: notifier,
 
     // ── Auth Redirect ──
     redirect: (context, state) {
+      final isAuthenticated = ref.read(authStateProvider);
+      final onboardingComplete = ref.read(onboardingCompleteProvider);
+
       final location = state.matchedLocation;
       final loggingIn = location == RoutePaths.login ||
           location == RoutePaths.signup ||
@@ -63,7 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return RoutePaths.login;
       }
 
-      // Authenticated — redirect away from auth pages.
+      // Authenticated — redirect away from auth pages to home dashboard.
       if (loggingIn || isOnboarding) {
         return RoutePaths.home;
       }
