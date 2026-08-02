@@ -34,8 +34,8 @@ final onboardingCompleteProvider = StateProvider<bool>((ref) => false);
 /// Listenable notifier to trigger GoRouter redirects without destroying the router instance.
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(this._ref) {
-    _ref.listen<bool>(authStateProvider, (_, __) => notifyListeners());
-    _ref.listen<bool>(onboardingCompleteProvider, (_, __) => notifyListeners());
+    _ref.listen<bool>(authStateProvider, (previous, next) => notifyListeners());
+    _ref.listen<bool>(onboardingCompleteProvider, (previous, next) => notifyListeners());
   }
 
   final Ref _ref;

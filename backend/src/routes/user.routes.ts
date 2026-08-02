@@ -8,10 +8,10 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/me', userController.getProfile);
-router.patch('/me', validate(updateProfileSchema), userController.updateProfile);
-router.post('/me/artist-mode', validate(toggleArtistModeSchema), userController.toggleArtistMode);
-router.get('/me/storage', userController.getStorageQuota);
-router.post('/me/storage/recalculate', userController.recalculateStorage);
+router.get(['/me', '/'], userController.getProfile);
+router.patch(['/me', '/'], validate(updateProfileSchema), userController.updateProfile);
+router.post(['/me/artist-mode', '/artist-mode'], validate(toggleArtistModeSchema), userController.toggleArtistMode);
+router.get(['/me/storage', '/storage'], userController.getStorageQuota);
+router.post(['/me/storage/recalculate', '/storage/recalculate'], userController.recalculateStorage);
 
 export default router;
