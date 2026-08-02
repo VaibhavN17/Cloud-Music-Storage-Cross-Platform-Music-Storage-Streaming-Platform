@@ -39,10 +39,12 @@ export const createApp = (): Express => {
 
   apiRouter.use('/auth', authRoutes);
   apiRouter.use('/users', userRoutes);
+  apiRouter.use('/me', userRoutes);
   apiRouter.use('/folders', folderRoutes);
   apiRouter.use('/tracks', trackRoutes);
   apiRouter.use('/uploads', uploadRoutes);
   apiRouter.use('/streaming', streamingRoutes);
+  apiRouter.use('/playback', streamingRoutes);
   apiRouter.use('/playlists', playlistRoutes);
   apiRouter.use('/search', searchRoutes);
   apiRouter.use('/public', publicRoutes);

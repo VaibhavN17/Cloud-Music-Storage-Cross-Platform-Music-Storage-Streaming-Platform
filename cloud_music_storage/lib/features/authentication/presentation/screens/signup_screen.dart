@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/theme_extension.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../providers/auth_controller.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -41,16 +43,28 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     setState(() => _isLoading = true);
 
-    // TODO: Connect to auth repository.
-    await Future<void>.delayed(const Duration(seconds: 1));
+    try {
+      await ref.read(authControllerProvider.notifier).signup(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            displayName: _nameController.text.trim(),
+          );
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      context.go(RoutePaths.home);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-    // Navigate to email verification.
-    context.push(
-      '${RoutePaths.otp}?email=${_emailController.text}',
-    );
+      final message = e is ApiException ? e.message : 'Registration failed. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override

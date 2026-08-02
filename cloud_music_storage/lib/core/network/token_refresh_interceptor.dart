@@ -63,8 +63,18 @@ class TokenRefreshInterceptor extends QueuedInterceptor {
         data: {'refreshToken': refreshToken},
       );
 
-      final newAccessToken = response.data['accessToken'] as String;
-      final newRefreshToken = response.data['refreshToken'] as String;
+      final responseData = response.data;
+      final tokenMap = (responseData is Map && responseData['data'] is Map)
+          ? responseData['data'] as Map
+          : (responseData is Map ? responseData : {});
+
+      final newAccessToken = tokenMap['accessToken'] as String?;
+      final newRefreshToken = tokenMap['refreshToken'] as String?;
+
+      if (newAccessToken == null || newRefreshToken == null) {
+        onForceLogout();
+        return handler.reject(err);
+      }
 
       // Persist new tokens.
       await _secureStorage.setTokens(

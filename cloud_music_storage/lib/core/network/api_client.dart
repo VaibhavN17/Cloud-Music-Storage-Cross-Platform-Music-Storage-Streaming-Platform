@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
+import '../../features/authentication/presentation/providers/auth_controller.dart';
 import '../config/app_config.dart';
 import '../storage/secure_storage_service.dart';
 import 'auth_interceptor.dart';
@@ -26,9 +27,8 @@ final apiClientProvider = Provider<Dio>((ref) {
   return ApiClient.create(
     secureStorage: secureStorage,
     onForceLogout: () {
-      // This will be connected to auth state provider later.
-      // For now, just clear tokens.
       secureStorage.clearAuth();
+      ref.read(authControllerProvider.notifier).forceLogout();
     },
   );
 });

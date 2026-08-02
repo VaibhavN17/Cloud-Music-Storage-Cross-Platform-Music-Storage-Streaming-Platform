@@ -9,20 +9,11 @@ enum Environment { dev, staging, prod }
 class AppConfig {
   const AppConfig._();
 
-  /// Current environment — set to prod for Vercel backend integration.
+  /// Current environment.
   static const Environment environment = Environment.prod;
 
-  /// API base URL per environment.
-  static String get apiBaseUrl {
-    switch (environment) {
-      case Environment.dev:
-        return 'https://cloudtunemax.vercel.app/api/v1';
-      case Environment.staging:
-        return 'https://cloudtunemax.vercel.app/api/v1';
-      case Environment.prod:
-        return 'https://cloudtunemax.vercel.app/api/v1';
-    }
-  }
+  /// API base URL.
+  static String get apiBaseUrl => 'https://cloudtunemax.vercel.app/api/v1';
 
   /// Request timeout in milliseconds.
   static const int connectTimeout = 15000;

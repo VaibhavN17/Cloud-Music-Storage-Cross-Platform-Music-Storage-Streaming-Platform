@@ -8,11 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/theme_extension.dart';
-import '../../../../core/router/app_router.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../providers/auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -40,15 +41,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // TODO: Connect to auth repository in Phase 9 API integration.
-    await Future<void>.delayed(const Duration(seconds: 1));
+    try {
+      await ref.read(authControllerProvider.notifier).login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      context.go(RoutePaths.home);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-    // Simulate successful login.
-    ref.read(authStateProvider.notifier).state = true;
-    context.go(RoutePaths.home);
+      final message = e is ApiException ? e.message : 'Login failed. Please check your credentials.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override

@@ -9,11 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/theme_extension.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../providers/auth_controller.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -59,13 +58,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     if (!mounted) return;
 
-    final secureStorage = ref.read(secureStorageProvider);
-    final token = await secureStorage.getAccessToken();
+    final isAuthenticated =
+        await ref.read(authControllerProvider.notifier).checkAuthStatus();
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
-      ref.read(authStateProvider.notifier).state = true;
+    if (isAuthenticated) {
       context.go(RoutePaths.home);
     } else {
       context.go(RoutePaths.onboarding);

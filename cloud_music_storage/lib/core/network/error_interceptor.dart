@@ -44,6 +44,13 @@ class ErrorInterceptor extends Interceptor {
     final message = data is Map ? data['message'] as String? : null;
 
     switch (statusCode) {
+      case 400:
+        return ApiException(
+          message: message ?? 'Bad request. Please check your input.',
+          statusCode: 400,
+          errorCode: errorCode,
+        );
+
       case 401:
         if (errorCode == 'AUTH_TOKEN_EXPIRED') {
           return const TokenExpiredException();
@@ -52,7 +59,7 @@ class ErrorInterceptor extends Interceptor {
           return const RefreshTokenInvalidException();
         }
         return AuthException(
-          message: message ?? 'Authentication failed',
+          message: message ?? 'Invalid email or password',
           errorCode: errorCode,
         );
 
@@ -64,6 +71,13 @@ class ErrorInterceptor extends Interceptor {
       case 404:
         return NotFoundException(
           message: message ?? 'Resource not found',
+        );
+
+      case 409:
+        return ApiException(
+          message: message ?? 'An account with this email already exists',
+          statusCode: 409,
+          errorCode: 'CONFLICT',
         );
 
       case 413:

@@ -7,11 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import '../../../../core/extensions/theme_extension.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../authentication/presentation/providers/auth_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -134,8 +136,11 @@ class SettingsScreen extends ConsumerWidget {
           // Logout
           Center(
             child: TextButton.icon(
-              onPressed: () {
-                // TODO: Logout via auth repository.
+              onPressed: () async {
+                await ref.read(authControllerProvider.notifier).logout();
+                if (context.mounted) {
+                  context.go(RoutePaths.login);
+                }
               },
               icon: const Icon(Iconsax.logout, color: AppColors.error, size: 20),
               label: Text(
