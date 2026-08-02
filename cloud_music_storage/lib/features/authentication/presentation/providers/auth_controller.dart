@@ -154,4 +154,20 @@ class AuthController extends StateNotifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
     _ref.read(authStateProvider.notifier).state = false;
   }
+
+  /// Send password reset request email.
+  Future<void> forgotPassword(String email) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      await _authRepo.forgotPassword(email);
+      state = state.copyWith(status: AuthStatus.unauthenticated, errorMessage: null);
+    } catch (e) {
+      final message = e is ApiException ? e.message : e.toString();
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: message,
+      );
+      rethrow;
+    }
+  }
 }

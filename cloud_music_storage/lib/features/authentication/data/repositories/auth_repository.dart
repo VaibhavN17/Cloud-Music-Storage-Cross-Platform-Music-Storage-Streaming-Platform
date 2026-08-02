@@ -208,4 +208,21 @@ class AuthRepository {
       await _secureStorage.clearAuth();
     }
   }
+
+  /// Request a password reset link for the given email.
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.forgotPassword,
+        data: {'email': email},
+      );
+    } on DioException catch (e) {
+      if (e.error is ApiException) {
+        throw e.error as ApiException;
+      }
+      throw ApiException(
+        message: e.response?.data?['message']?.toString() ?? 'Password reset request failed',
+      );
+    }
+  }
 }
