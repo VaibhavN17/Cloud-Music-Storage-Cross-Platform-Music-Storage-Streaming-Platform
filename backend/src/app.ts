@@ -19,6 +19,12 @@ import searchRoutes from './routes/search.routes';
 import publicRoutes from './routes/public.routes';
 import adminRoutes from './routes/admin.routes';
 
+// Polyfill BigInt serialization for JSON responses
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 export const createApp = (): Express => {
   const app = express();
 
