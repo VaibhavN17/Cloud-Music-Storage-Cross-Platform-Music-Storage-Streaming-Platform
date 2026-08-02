@@ -12,12 +12,25 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../authentication/presentation/providers/auth_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+    final displayName = user?['displayName'] as String? ?? 'User';
+    final email = user?['email'] as String? ?? '';
+    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
+
+    final usedBytes = (user?['storageUsedBytes'] as num?)?.toDouble() ?? 0.0;
+    final quotaBytes = (user?['storageQuotaBytes'] as num?)?.toDouble() ?? 5368709120.0;
+    final progress = (quotaBytes > 0) ? (usedBytes / quotaBytes).clamp(0.0, 1.0) : 0.0;
+    final usedMb = (usedBytes / (1024 * 1024)).toStringAsFixed(1);
+    final quotaGb = (quotaBytes / (1024 * 1024 * 1024)).toStringAsFixed(0);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -42,22 +55,24 @@ class ProfileScreen extends ConsumerWidget {
               radius: 48,
               backgroundColor: AppColors.primary.withValues(alpha: 0.15),
               child: Text(
-                'U',
+                initial,
                 style: AppTypography.display(color: AppColors.primary),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'User Name',
+              displayName,
               style: AppTypography.h1(color: context.appColors.textPrimary),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'user@example.com',
-              style: AppTypography.body(
-                color: context.appColors.textSecondary,
+            if (email.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                email,
+                style: AppTypography.body(
+                  color: context.appColors.textSecondary,
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: AppSpacing.xl),
 
             // Stats row
@@ -91,7 +106,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '0 B / 5 GB',
+                        '$usedMb MB / $quotaGb GB',
                         style: AppTypography.caption(
                           color: context.appColors.textSecondary,
                         ),
@@ -102,7 +117,7 @@ class ProfileScreen extends ConsumerWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: 0,
+                      value: progress,
                       backgroundColor: context.appColors.border,
                       color: AppColors.primary,
                       minHeight: 6,

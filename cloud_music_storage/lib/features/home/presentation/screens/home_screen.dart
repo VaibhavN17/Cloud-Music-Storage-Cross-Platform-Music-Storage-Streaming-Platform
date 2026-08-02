@@ -15,12 +15,17 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_radius.dart';
+import '../../../authentication/presentation/providers/auth_controller.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+    final displayName = user?['displayName'] as String? ?? user?['email'] as String? ?? 'Music Lover';
+
     final screenPadding = context.isMobile
         ? AppSpacing.screenPaddingMobile
         : AppSpacing.screenPaddingDesktop;
@@ -34,24 +39,41 @@ class HomeScreen extends ConsumerWidget {
             title: Row(
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.cloud_rounded,
-                    color: Colors.white,
-                    size: 18,
+                  child: Center(
+                    child: Text(
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  'Cloud Music',
-                  style: AppTypography.h2(
-                    color: context.appColors.textPrimary,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Welcome, $displayName',
+                      style: AppTypography.h3(
+                        color: context.appColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Cloud Music Storage',
+                      style: AppTypography.caption(
+                        color: context.appColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -92,7 +114,7 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sectionGap),
 
                 // ── Storage Usage ──
-                _StorageUsageCard(),
+                _StorageUsageCard(user: user),
                 const SizedBox(height: AppSpacing.sectionGap),
 
                 // ── Favorites ──
@@ -224,7 +246,7 @@ class _HorizontalTrackList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 200,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 6,
@@ -313,7 +335,7 @@ class _HorizontalPlaylistList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 200,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 4,
@@ -366,8 +388,20 @@ class _HorizontalPlaylistList extends StatelessWidget {
 
 // ── Storage Usage Card ──
 class _StorageUsageCard extends StatelessWidget {
+  const _StorageUsageCard({this.user});
+
+  final Map<String, dynamic>? user;
+
   @override
   Widget build(BuildContext context) {
+    final usedBytes = (user?['storageUsedBytes'] as num?)?.toDouble() ?? 0.0;
+    final quotaBytes = (user?['storageQuotaBytes'] as num?)?.toDouble() ?? 5368709120.0;
+    final progress = (quotaBytes > 0) ? (usedBytes / quotaBytes).clamp(0.0, 1.0) : 0.0;
+
+    final usedMb = (usedBytes / (1024 * 1024)).toStringAsFixed(1);
+    final quotaGb = (quotaBytes / (1024 * 1024 * 1024)).toStringAsFixed(0);
+    final freeGb = ((quotaBytes - usedBytes) / (1024 * 1024 * 1024)).toStringAsFixed(1);
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -387,7 +421,7 @@ class _StorageUsageCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '1.2 GB / 5 GB',
+                '$usedMb MB / $quotaGb GB',
                 style: AppTypography.caption(
                   color: context.appColors.textSecondary,
                 ),
@@ -398,7 +432,7 @@ class _StorageUsageCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: 0.24,
+              value: progress,
               backgroundColor: context.appColors.border,
               color: AppColors.primary,
               minHeight: 6,
@@ -406,7 +440,7 @@ class _StorageUsageCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '3.8 GB available',
+            '$freeGb GB available',
             style: AppTypography.caption(
               color: context.appColors.textTertiary,
             ),
