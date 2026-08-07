@@ -4,6 +4,8 @@ import { ApiError } from '../utils/ApiError';
 import { prisma } from '../config/database';
 import { Visibility } from '@prisma/client';
 
+import { R2_BUCKETS } from '../config/r2';
+
 export class StreamingService {
   constructor(
     private trackRepo: TrackRepository = trackRepository,
@@ -23,7 +25,7 @@ export class StreamingService {
     const ttlSeconds = 7200; // 2 hours TTL for smooth album streaming
     const streamUrl = await this.storage.generateSignedStreamingUrl(
       track.fileKey,
-      track.visibility === Visibility.PUBLIC ? 'audio-public' : 'audio-private',
+      track.visibility === Visibility.PUBLIC ? R2_BUCKETS.PUBLIC : R2_BUCKETS.PRIVATE,
       ttlSeconds
     );
 

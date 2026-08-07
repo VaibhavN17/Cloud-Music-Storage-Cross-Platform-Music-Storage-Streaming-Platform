@@ -206,6 +206,9 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     }
 
     try {
+      // Log for easy debugging in Flutter console
+      // ignore: avoid_print
+      print('[PlayerNotifier] Playing track "${track.title}" (ID: ${track.id}) with resolved source: $source');
       await _audioPlayer.setAudioSource(source);
       await _audioPlayer.play();
     } catch (e) {
