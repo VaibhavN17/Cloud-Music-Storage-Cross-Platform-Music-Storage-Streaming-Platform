@@ -52,6 +52,17 @@ class StreamResponse {
   final String format;
 }
 
+/// Thrown by [TrackRepository.getStreamUrl] when the backend returns 404,
+/// meaning the track ID does not exist in the server database.
+/// This typically happens with ghost tracks that were created locally
+/// before the upload confirmation step completed.
+class TrackNotFoundException implements Exception {
+  const TrackNotFoundException(this.trackId);
+  final String trackId;
+  @override
+  String toString() => 'TrackNotFoundException: $trackId not found on server.';
+}
+
 final trackRepositoryProvider = Provider<TrackRepository>((ref) {
   return TrackRepository(dio: ref.watch(apiClientProvider));
 });
@@ -274,8 +285,9 @@ class TrackRepository {
 
   /// Fetches a fresh signed streaming URL for a track.
   ///
-  /// Returns a [StreamResponse] containing the URL, its expiry time, and
-  /// the audio format. Returns null if the request fails (e.g. offline).
+  /// Returns a [StreamResponse] on success.
+  /// Throws [TrackNotFoundException] if the server returns 404 (track not in DB).
+  /// Returns null on network failure (device offline / timeout).
   Future<StreamResponse?> getStreamUrl(String trackId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
@@ -288,6 +300,14 @@ class TrackRepository {
         expiresAt: DateTime.parse(data['expiresAt'] as String),
         format: data['format'] as String? ?? 'mp3',
       );
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 404 || statusCode == 403) {
+        // Track does not exist on the server — ghost/local-only track.
+        throw TrackNotFoundException(trackId);
+      }
+      // Other errors (timeout, no internet) — return null to show offline msg.
+      return null;
     } catch (_) {
       return null;
     }

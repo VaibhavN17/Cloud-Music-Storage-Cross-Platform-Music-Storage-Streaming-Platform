@@ -19,6 +19,7 @@ import '../../../../shared/models/track_model.dart';
 import '../../../../shared/repositories/track_repository.dart';
 import '../../../../core/constants/app_constants.dart';
 
+
 enum RepeatState { off, one, all }
 
 /// Temporary in-memory session holding a signed stream URL for one track.
@@ -182,12 +183,24 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       errorMessage: null,
     );
 
-    final source = await _resolveAudioSource(track);
+    AudioSource? source;
+    try {
+      source = await _resolveAudioSource(track);
+    } on TrackNotFoundException {
+      // Track ID does not exist on the server — it was a ghost/local-only upload.
+      state = state.copyWith(
+        isBuffering: false,
+        errorMessage:
+            '"${track.title}" was not saved to your cloud library. Please upload it again.',
+      );
+      return;
+    }
+
     if (source == null) {
       state = state.copyWith(
         isBuffering: false,
         errorMessage:
-            '"${track.title}" is not available offline and could not be reached. Check your connection.',
+            '"${track.title}" is not available offline and the server could not be reached. Check your connection.',
       );
       return;
     }
@@ -215,6 +228,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   /// 3. Fresh signed URL fetched from `GET /tracks/:id/stream-url`.
   ///
   /// Returns null when offline with no cached URL available.
+  /// Throws [TrackNotFoundException] if the track doesn't exist on the server.
   Future<AudioSource?> _resolveAudioSource(TrackModel track) async {
     // 1. Offline file — only trust it if it actually exists on disk.
     if (track.localPath != null) {
@@ -231,6 +245,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     }
 
     // 3. Request a fresh signed URL from the backend.
+    //    TrackNotFoundException propagates up — caller handles it.
     final response = await _trackRepository.getStreamUrl(track.id);
     if (response != null) {
       _sessionCache[track.id] = StreamSession(
