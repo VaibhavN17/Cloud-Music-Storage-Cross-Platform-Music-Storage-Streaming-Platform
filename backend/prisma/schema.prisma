@@ -40,10 +40,12 @@ enum NotificationType {
   NEW_COMMENT
   SYSTEM_ALERT
   REPORT_UPDATE
+  COLLABORATION_INVITE
 }
 
 enum CollaborationStatus {
   PENDING
+  ACCEPTED
   ACTIVE
   ENDED
   DECLINED
@@ -62,6 +64,10 @@ model User {
   twoFactorSecret   String?
   storageUsedBytes  BigInt    @default(0)
   storageQuotaBytes BigInt    @default(5368709120)
+  googleId              String?   @unique
+  appleId               String?   @unique
+  phoneNumber           String?
+  phoneNumberNormalized String?
   suspended         Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -341,18 +347,19 @@ model Settings {
 }
 
 model CollaborationSession {
-  id         String              @id @default(cuid())
-  hostId     String
-  host       User                @relation("SessionHost", fields: [hostId], references: [id])
-  guestId    String?
-  guest      User?               @relation("SessionGuest", fields: [guestId], references: [id])
-  guestEmail String?
-  status     CollaborationStatus @default(PENDING)
-  trackIds   String[]
-  startedAt  DateTime?
-  endedAt    DateTime?
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime            @updatedAt
+  id             String              @id @default(cuid())
+  hostId         String
+  host           User                @relation("SessionHost", fields: [hostId], references: [id])
+  guestId        String?
+  guest          User?               @relation("SessionGuest", fields: [guestId], references: [id])
+  guestEmail     String?
+  status         CollaborationStatus @default(PENDING)
+  currentTrackId String?
+  trackIds       String[]
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   @@index([hostId])
   @@index([guestId])

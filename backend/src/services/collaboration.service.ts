@@ -297,9 +297,11 @@ export class CollaborationService {
       throw ApiError.forbidden('You are not a participant in this collaboration session.');
     }
 
+    const participantIds = [session.hostId, session.guestId].filter((id): id is string => Boolean(id));
+
     const tracks = await prisma.track.findMany({
       where: {
-        ownerId: { in: [session.hostId, session.guestId] },
+        ownerId: { in: participantIds },
         deletedAt: null,
       },
       include: {
@@ -335,9 +337,11 @@ export class CollaborationService {
       throw ApiError.forbidden('You are not a participant in this session.');
     }
 
+    const participantIds = [session.hostId, session.guestId].filter((id): id is string => Boolean(id));
+
     const tracks = await prisma.track.findMany({
       where: {
-        ownerId: { in: [session.hostId, session.guestId] },
+        ownerId: { in: participantIds },
         deletedAt: null,
       },
       include: {
