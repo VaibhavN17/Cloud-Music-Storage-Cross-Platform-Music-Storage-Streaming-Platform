@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/repositories/auth_repository.dart';
 
 enum AuthStatus {
@@ -145,12 +146,16 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
     await _authRepo.logout();
+    // Clear in-memory signed URL sessions so they cannot be reused by
+    // a different account logging in during the same app session.
+    _ref.read(playerProvider.notifier).clearSessions();
     state = const AuthState(status: AuthStatus.unauthenticated);
     _ref.read(authStateProvider.notifier).state = false;
   }
 
   /// Triggered by HTTP Interceptors on unrecoverable token failure.
   void forceLogout() {
+    _ref.read(playerProvider.notifier).clearSessions();
     state = const AuthState(status: AuthStatus.unauthenticated);
     _ref.read(authStateProvider.notifier).state = false;
   }

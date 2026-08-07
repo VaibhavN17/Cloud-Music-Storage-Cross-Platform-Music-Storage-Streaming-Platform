@@ -1,4 +1,6 @@
 /// Search screen.
+///
+/// Fully reactive search filtering over user's tracks library.
 library;
 
 import 'package:flutter/material.dart';
@@ -6,9 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import '../../../../core/extensions/theme_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/models/track_model.dart';
+import '../../../../shared/providers/tracks_provider.dart';
+import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../player/presentation/providers/player_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -19,7 +26,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _searchController = TextEditingController();
-  bool _hasQuery = false;
+  String _query = '';
 
   @override
   void dispose() {
@@ -29,6 +36,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tracksState = ref.watch(tracksProvider);
+    final allTracks = tracksState.tracks;
+
+    final queryClean = _query.trim().toLowerCase();
+    final searchResults = queryClean.isEmpty
+        ? <TrackModel>[]
+        : allTracks.where((t) {
+            final titleMatch = t.title.toLowerCase().contains(queryClean);
+            final artistMatch = t.displayArtist.toLowerCase().contains(queryClean);
+            final albumMatch = (t.album ?? '').toLowerCase().contains(queryClean);
+            final genreMatch = (t.genre ?? '').toLowerCase().contains(queryClean);
+            return titleMatch || artistMatch || albumMatch || genreMatch;
+          }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -45,16 +66,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             child: TextField(
               controller: _searchController,
-              onChanged: (v) => setState(() => _hasQuery = v.isNotEmpty),
+              onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
-                hintText: 'Search tracks, artists, albums...',
+                hintText: 'Search songs, artists, albums, playlists...',
                 prefixIcon: const Icon(Iconsax.search_normal_1, size: 20),
-                suffixIcon: _hasQuery
+                suffixIcon: _query.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () {
                           _searchController.clear();
-                          setState(() => _hasQuery = false);
+                          setState(() => _query = '');
                         },
                       )
                     : null,
@@ -63,81 +84,66 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Content
+          // Search Content Body
           Expanded(
-            child: _hasQuery ? _buildResults() : _buildBrowse(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBrowse() {
-    final categories = [
-      ('Genres', Iconsax.music, const Color(0xFF2E6BFF)),
-      ('Moods', Iconsax.emoji_happy, const Color(0xFFFF6B4A)),
-      ('Recently Searched', Iconsax.clock, const Color(0xFF2ECC71)),
-      ('Trending', Iconsax.trend_up, const Color(0xFFF5A623)),
-      ('New Releases', Iconsax.flash_1, const Color(0xFF9B59B6)),
-      ('Top Artists', Iconsax.people, const Color(0xFFE91E63)),
-    ];
-
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.screenPaddingMobile,
-      ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: context.isMobile ? 2 : 3,
-        crossAxisSpacing: AppSpacing.gridGap,
-        mainAxisSpacing: AppSpacing.gridGap,
-        childAspectRatio: 1.6,
-      ),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final (label, icon, color) = categories[index];
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color, color.withValues(alpha: 0.7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: AppRadius.cardRadius,
-          ),
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(icon, color: Colors.white, size: 24),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: AppTypography.bodySemiBold(color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildResults() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Iconsax.search_normal_1,
-            size: 64,
-            color: context.appColors.textTertiary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Search results will appear here',
-            style: AppTypography.body(
-              color: context.appColors.textSecondary,
-            ),
+            child: queryClean.isEmpty
+                ? const AppEmptyState(type: EmptyStateType.searchPrompt)
+                : searchResults.isEmpty
+                    ? const AppEmptyState(type: EmptyStateType.noSearchResults)
+                    : ListView.separated(
+                        itemCount: searchResults.length,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screenPaddingMobile,
+                        ),
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final track = searchResults[index];
+                          return ListTile(
+                            onTap: () {
+                              ref.read(playerProvider.notifier).playTrack(
+                                    track,
+                                    queue: searchResults,
+                                    index: index,
+                                  );
+                            },
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: context.appColors.surfaceVariant,
+                                borderRadius: AppRadius.imageRadius,
+                              ),
+                              child: const Icon(
+                                Icons.music_note_rounded,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                            ),
+                            title: Text(
+                              track.title,
+                              style: AppTypography.bodySmall(
+                                  color: context.appColors.textPrimary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '${track.displayArtist} • ${track.format.toUpperCase()}',
+                              style: AppTypography.caption(
+                                  color: context.appColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(
+                                track.isFavorite ? Iconsax.heart : Iconsax.heart_copy,
+                                color: track.isFavorite ? AppColors.accent : context.appColors.textTertiary,
+                                size: 20,
+                              ),
+                              onPressed: () => ref.read(tracksProvider.notifier).toggleFavorite(track.id),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

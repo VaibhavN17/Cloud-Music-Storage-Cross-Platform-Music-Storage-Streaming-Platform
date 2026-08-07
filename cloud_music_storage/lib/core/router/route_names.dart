@@ -33,6 +33,7 @@ class RouteNames {
   static const String editProfile = 'edit-profile';
   static const String artistProfile = 'artist-profile';
   static const String notifications = 'notifications';
+  static const String collaboration = 'collaboration';
   static const String trackDetail = 'track-detail';
   static const String trash = 'trash';
 
@@ -77,6 +78,7 @@ class RoutePaths {
   static const String editProfile = 'edit';
   static const String artistProfile = '/artist/:userId';
   static const String notifications = '/notifications';
+  static const String collaboration = '/collaboration';
   static const String trackDetail = 'track/:trackId';
   static const String trash = 'trash';
 

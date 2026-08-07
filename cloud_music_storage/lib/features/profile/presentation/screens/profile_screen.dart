@@ -1,4 +1,6 @@
 /// Profile screen.
+///
+/// Refactored to display truthful user profile stats without fake/demo metrics.
 library;
 
 import 'package:flutter/material.dart';
@@ -21,7 +23,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
     final user = authState.user;
-    final displayName = user?['displayName'] as String? ?? 'User';
+    final displayName = user?['displayName'] as String? ?? user?['email'] as String? ?? 'User';
     final email = user?['email'] as String? ?? '';
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
 
@@ -30,6 +32,10 @@ class ProfileScreen extends ConsumerWidget {
     final progress = (quotaBytes > 0) ? (usedBytes / quotaBytes).clamp(0.0, 1.0) : 0.0;
     final usedMb = (usedBytes / (1024 * 1024)).toStringAsFixed(1);
     final quotaGb = (quotaBytes / (1024 * 1024 * 1024)).toStringAsFixed(0);
+
+    final int trackCount = (user?['trackCount'] as num?)?.toInt() ?? 0;
+    final int playlistCount = (user?['playlistCount'] as num?)?.toInt() ?? 0;
+    final int favoriteCount = (user?['favoriteCount'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -49,7 +55,7 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(AppSpacing.screenPaddingMobile),
         child: Column(
           children: [
-            // Avatar & info
+            // Avatar & user info
             const SizedBox(height: AppSpacing.lg),
             CircleAvatar(
               radius: 48,
@@ -75,18 +81,18 @@ class ProfileScreen extends ConsumerWidget {
             ],
             const SizedBox(height: AppSpacing.xl),
 
-            // Stats row
-            const Row(
+            // Truthful Stats row
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _StatItem(label: 'Tracks', value: '0'),
-                _StatItem(label: 'Playlists', value: '0'),
-                _StatItem(label: 'Followers', value: '0'),
+                _StatItem(label: 'Tracks', value: '$trackCount'),
+                _StatItem(label: 'Playlists', value: '$playlistCount'),
+                _StatItem(label: 'Favorites', value: '$favoriteCount'),
               ],
             ),
             const SizedBox(height: AppSpacing.xxl),
 
-            // Storage
+            // Storage Card
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
@@ -100,7 +106,7 @@ class ProfileScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Storage Usage',
+                        'Cloud Storage',
                         style: AppTypography.bodySemiBold(
                           color: context.appColors.textPrimary,
                         ),
@@ -126,29 +132,6 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // Menu items
-            _ProfileMenuItem(
-              icon: Iconsax.edit,
-              label: 'Edit Profile',
-              onTap: () {},
-            ),
-            _ProfileMenuItem(
-              icon: Iconsax.people,
-              label: 'Artist Profile',
-              onTap: () {},
-            ),
-            _ProfileMenuItem(
-              icon: Iconsax.notification,
-              label: 'Notifications',
-              onTap: () => context.push(RoutePaths.notifications),
-            ),
-            _ProfileMenuItem(
-              icon: Iconsax.setting_2,
-              label: 'Settings',
-              onTap: () => context.push(RoutePaths.settings),
-            ),
           ],
         ),
       ),
@@ -170,43 +153,12 @@ class _StatItem extends StatelessWidget {
           value,
           style: AppTypography.h2(color: context.appColors.textPrimary),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           label,
-          style: AppTypography.caption(
-            color: context.appColors.textSecondary,
-          ),
+          style: AppTypography.caption(color: context.appColors.textSecondary),
         ),
       ],
-    );
-  }
-}
-
-class _ProfileMenuItem extends StatelessWidget {
-  const _ProfileMenuItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, size: 22),
-      title: Text(
-        label,
-        style: AppTypography.body(color: context.appColors.textPrimary),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: context.appColors.textTertiary,
-      ),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
     );
   }
 }

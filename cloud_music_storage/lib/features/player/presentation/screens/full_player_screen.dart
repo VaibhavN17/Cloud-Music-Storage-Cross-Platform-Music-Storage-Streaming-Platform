@@ -106,6 +106,35 @@ class FullPlayerScreen extends ConsumerWidget {
 
               const Spacer(),
 
+              // Error banner
+              if (playerState.errorMessage != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.15),
+                    borderRadius: AppRadius.cardRadius,
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: Colors.red, size: 18),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          playerState.errorMessage!,
+                          style: AppTypography.caption(color: Colors.red),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Title, Artist & Favorite
               Row(
                 children: [

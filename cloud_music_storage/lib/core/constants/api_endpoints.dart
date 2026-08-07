@@ -67,4 +67,13 @@ class ApiEndpoints {
 
   // ── Playback ──
   static const String playbackHeartbeat = '/playback/heartbeat';
+
+  // ── Collaboration ──
+  static const String collaborationSyncContacts = '/collaboration/contacts/sync';
+  static const String collaborationInvite = '/collaboration/invite';
+  static const String collaborationSession = '/collaboration/session';
+  static String collaborationRespondInvite(String id) => '/collaboration/invites/$id/respond';
+  static String collaborationSessionTracks(String id) => '/collaboration/session/$id/tracks';
+  static String collaborationPlayRandom(String id) => '/collaboration/session/$id/play-random';
+  static String collaborationEndSession(String id) => '/collaboration/session/$id/end';
 }

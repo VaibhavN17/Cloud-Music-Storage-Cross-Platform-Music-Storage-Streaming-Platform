@@ -8,7 +8,7 @@ export class StorageService {
     userId: string,
     trackId: string,
     filename: string,
-    contentType: string,
+    _contentType: string,
     isPublic = false
   ): Promise<{ uploadUrl: string; fileKey: string; bucket: string }> {
     const extension = filename.split('.').pop()?.toLowerCase() || 'mp3';
@@ -17,10 +17,11 @@ export class StorageService {
       ? R2_STORAGE_PATHS.publicAudio(userId, trackId, extension)
       : R2_STORAGE_PATHS.privateAudio(userId, trackId, extension);
 
+    // Omit ContentType from PutObjectCommand during getSignedUrl to avoid
+    // S3/R2 X-Amz-SignedHeaders signature mismatches (HTTP 403) from mobile HTTP clients.
     const command = new PutObjectCommand({
       Bucket: bucket,
       Key: fileKey,
-      ContentType: contentType,
     });
 
     const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 }); // 1 hour TTL

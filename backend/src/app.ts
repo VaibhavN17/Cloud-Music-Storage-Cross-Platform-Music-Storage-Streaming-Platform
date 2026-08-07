@@ -18,6 +18,7 @@ import playlistRoutes from './routes/playlist.routes';
 import searchRoutes from './routes/search.routes';
 import publicRoutes from './routes/public.routes';
 import adminRoutes from './routes/admin.routes';
+import collaborationRoutes from './routes/collaboration.routes';
 
 // Polyfill BigInt serialization for JSON responses
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,6 +56,7 @@ export const createApp = (): Express => {
   apiRouter.use('/search', searchRoutes);
   apiRouter.use('/public', publicRoutes);
   apiRouter.use('/admin', adminRoutes);
+  apiRouter.use('/collaboration', collaborationRoutes);
 
   app.use(env.API_PREFIX, apiRouter);
 

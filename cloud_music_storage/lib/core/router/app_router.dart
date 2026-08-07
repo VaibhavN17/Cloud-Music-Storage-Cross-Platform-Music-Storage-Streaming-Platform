@@ -22,6 +22,7 @@ import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/upload/presentation/screens/upload_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/collaboration/presentation/screens/collaboration_screen.dart';
 import '../../shared/widgets/adaptive_shell.dart';
 import 'route_names.dart';
 
@@ -196,6 +197,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.notifications,
         name: RouteNames.notifications,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.collaboration,
+        name: RouteNames.collaboration,
+        builder: (context, state) => const CollaborationScreen(),
       ),
     ],
 

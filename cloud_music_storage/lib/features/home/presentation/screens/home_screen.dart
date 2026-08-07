@@ -1,7 +1,7 @@
 /// Home screen — main dashboard.
 ///
-/// Shows Recently Played, Continue Listening, Favorites, Playlists,
-/// Storage Usage, and Quick Upload shortcut.
+/// Fully reactive frontend integrated with tracksProvider and playlistsProvider.
+/// Automatically transitions between empty onboarding and populated library sections.
 library;
 
 import 'package:flutter/material.dart';
@@ -12,10 +12,17 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../../core/extensions/theme_extension.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/theme/app_radius.dart';
+import '../../../../shared/models/track_model.dart';
+import '../../../../shared/providers/playlists_provider.dart';
+import '../../../../shared/providers/tracks_provider.dart';
+import '../../../../shared/widgets/app_empty_state.dart';
+
 import '../../../authentication/presentation/providers/auth_controller.dart';
+import '../../../player/presentation/providers/player_provider.dart';
+import '../widgets/quick_play_hero.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -25,6 +32,14 @@ class HomeScreen extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final user = authState.user;
     final displayName = user?['displayName'] as String? ?? user?['email'] as String? ?? 'Music Lover';
+
+    final tracksState = ref.watch(tracksProvider);
+    final userTracks = tracksState.tracks;
+    final isLibraryEmpty = userTracks.isEmpty;
+
+    final recentTracks = ref.watch(recentTracksProvider);
+    final favoriteTracks = ref.watch(favoritesProvider);
+    final playlists = ref.watch(playlistsProvider).playlists;
 
     final screenPadding = context.isMobile
         ? AppSpacing.screenPaddingMobile
@@ -57,27 +72,38 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Welcome, $displayName',
-                      style: AppTypography.h3(
-                        color: context.appColors.textPrimary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Welcome, $displayName',
+                        style: AppTypography.h3(
+                          color: context.appColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      'Cloud Music Storage',
-                      style: AppTypography.caption(
-                        color: context.appColors.textSecondary,
+                      Text(
+                        'Cloud Music Storage',
+                        style: AppTypography.caption(
+                          color: context.appColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.people_outline_rounded),
+                tooltip: 'Listen Together',
+                onPressed: () => context.push(RoutePaths.collaboration),
+              ),
               IconButton(
                 icon: const Icon(Iconsax.notification),
                 onPressed: () => context.push(RoutePaths.notifications),
@@ -90,38 +116,85 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
 
-          // Content
+          // Content List
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: screenPadding),
             sliver: SliverList.list(
               children: [
                 const SizedBox(height: AppSpacing.lg),
 
+                // ── Quick Play Hero ──
+                QuickPlayHero(
+                  userTracks: userTracks,
+                  viewState: tracksState.viewState,
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
+
                 // ── Quick Actions ──
-                _QuickActions(),
+                _QuickActions(
+                  isEnabled: !isLibraryEmpty,
+                  onShuffle: () {
+                    final shuffled = List<TrackModel>.from(userTracks)..shuffle();
+                    ref.read(playerProvider.notifier).playTrack(shuffled.first, queue: shuffled);
+                  },
+                ),
                 const SizedBox(height: AppSpacing.sectionGap),
 
-                // ── Recently Played ──
-                _SectionHeader(title: 'Recently Played', onSeeAll: () {}),
-                const SizedBox(height: AppSpacing.md),
-                _HorizontalTrackList(),
+                // ── Listen Together Banner ──
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: const CircleAvatar(
+                      backgroundColor: Colors.purple,
+                      child: Icon(Icons.people_outline, color: Colors.white),
+                    ),
+                    title: const Text('Listen Together with Friends', style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Invite contacts, combine music & play random songs together!'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(RoutePaths.collaboration),
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.sectionGap),
 
-                // ── Your Playlists ──
-                _SectionHeader(title: 'Your Playlists', onSeeAll: () {}),
-                const SizedBox(height: AppSpacing.md),
-                _HorizontalPlaylistList(),
+                // ── Storage Usage Card ──
+                _StorageUsageCard(user: user, tracks: userTracks),
                 const SizedBox(height: AppSpacing.sectionGap),
 
-                // ── Storage Usage ──
-                _StorageUsageCard(user: user),
-                const SizedBox(height: AppSpacing.sectionGap),
+                // ── Empty State OR Dynamic Sections ──
+                if (isLibraryEmpty) ...[
+                  const AppEmptyState(
+                    type: EmptyStateType.firstTimeLibrary,
+                  ),
+                  const SizedBox(height: AppSpacing.xxxxl),
+                ] else ...[
+                  // Recently Played
+                  if (recentTracks.isNotEmpty) ...[
+                    _SectionHeader(title: 'Recently Added', onSeeAll: () => context.go(RoutePaths.library)),
+                    const SizedBox(height: AppSpacing.md),
+                    _HorizontalTrackList(tracks: recentTracks, ref: ref),
+                    const SizedBox(height: AppSpacing.sectionGap),
+                  ],
 
-                // ── Favorites ──
-                _SectionHeader(title: 'Favorites', onSeeAll: () {}),
-                const SizedBox(height: AppSpacing.md),
-                _HorizontalTrackList(),
-                const SizedBox(height: AppSpacing.xxxxl),
+                  // Playlists Section
+                  if (playlists.isNotEmpty) ...[
+                    _SectionHeader(title: 'Your Playlists', onSeeAll: () => context.go(RoutePaths.library)),
+                    const SizedBox(height: AppSpacing.md),
+                    _HorizontalPlaylistList(playlists: playlists),
+                    const SizedBox(height: AppSpacing.sectionGap),
+                  ],
+
+                  // Favorites Section
+                  if (favoriteTracks.isNotEmpty) ...[
+                    _SectionHeader(title: 'Favorites', onSeeAll: () => context.go(RoutePaths.library)),
+                    const SizedBox(height: AppSpacing.md),
+                    _HorizontalTrackList(tracks: favoriteTracks, ref: ref),
+                    const SizedBox(height: AppSpacing.sectionGap),
+                  ],
+
+                  const SizedBox(height: AppSpacing.xxl),
+                ],
               ],
             ),
           ),
@@ -138,8 +211,15 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-// ── Quick Actions Row ──
 class _QuickActions extends StatelessWidget {
+  const _QuickActions({
+    required this.isEnabled,
+    this.onShuffle,
+  });
+
+  final bool isEnabled;
+  final VoidCallback? onShuffle;
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -147,19 +227,22 @@ class _QuickActions extends StatelessWidget {
         _QuickActionChip(
           icon: Iconsax.shuffle,
           label: 'Shuffle All',
-          onTap: () {},
+          isEnabled: isEnabled,
+          onTap: isEnabled ? onShuffle : null,
         ),
         const SizedBox(width: AppSpacing.sm),
         _QuickActionChip(
           icon: Iconsax.heart,
           label: 'Liked Songs',
-          onTap: () {},
+          isEnabled: isEnabled,
+          onTap: isEnabled ? () => context.go(RoutePaths.library) : null,
         ),
         const SizedBox(width: AppSpacing.sm),
         _QuickActionChip(
           icon: Iconsax.clock,
           label: 'Recent',
-          onTap: () {},
+          isEnabled: isEnabled,
+          onTap: isEnabled ? () => context.go(RoutePaths.library) : null,
         ),
       ],
     );
@@ -170,41 +253,52 @@ class _QuickActionChip extends StatelessWidget {
   const _QuickActionChip({
     required this.icon,
     required this.label,
-    required this.onTap,
+    required this.isEnabled,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final bool isEnabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Material(
-        color: context.appColors.surfaceVariant,
-        borderRadius: AppRadius.cardRadius,
-        child: InkWell(
+      child: Opacity(
+        opacity: isEnabled ? 1.0 : 0.45,
+        child: Material(
+          color: context.appColors.surfaceVariant,
           borderRadius: AppRadius.cardRadius,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 18, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: AppTypography.caption(
-                      color: context.appColors.textPrimary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+          child: InkWell(
+            borderRadius: AppRadius.cardRadius,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: isEnabled ? AppColors.primary : context.appColors.textTertiary,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTypography.caption(
+                        color: isEnabled
+                            ? context.appColors.textPrimary
+                            : context.appColors.textTertiary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -213,7 +307,6 @@ class _QuickActionChip extends StatelessWidget {
   }
 }
 
-// ── Section Header ──
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title, required this.onSeeAll});
 
@@ -241,117 +334,96 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── Horizontal Track List (Mock) ──
 class _HorizontalTrackList extends StatelessWidget {
+  const _HorizontalTrackList({
+    required this.tracks,
+    required this.ref,
+  });
+
+  final List<TrackModel> tracks;
+  final WidgetRef ref;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 200,
+      height: 190,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: 6,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+        itemCount: tracks.length,
+        separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
-          return _TrackCard(index: index);
+          final track = tracks[index];
+          return GestureDetector(
+            onTap: () {
+              ref.read(playerProvider.notifier).playTrack(track, queue: tracks, index: index);
+            },
+            child: SizedBox(
+              width: 135,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 135,
+                    height: 135,
+                    decoration: BoxDecoration(
+                      color: context.appColors.surfaceVariant,
+                      borderRadius: AppRadius.cardRadius,
+                      border: Border.all(color: context.appColors.border),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.music_note_rounded,
+                        color: AppColors.primary,
+                        size: 36,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    track.title,
+                    style: AppTypography.bodySmall(color: context.appColors.textPrimary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    track.displayArtist,
+                    style: AppTypography.caption(color: context.appColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );
   }
 }
 
-class _TrackCard extends StatelessWidget {
-  const _TrackCard({required this.index});
-
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    final titles = [
-      'Midnight Drive', 'Sunset Vibes', 'Ocean Waves',
-      'City Lights', 'Morning Coffee', 'Late Night',
-    ];
-    final artists = [
-      'Rahul', 'Priya', 'Meera', 'DJ Set', 'Acoustic', 'Electronic',
-    ];
-    final colors = [
-      const Color(0xFF2E6BFF), const Color(0xFFFF6B4A),
-      const Color(0xFF2ECC71), const Color(0xFFF5A623),
-      const Color(0xFF9B59B6), const Color(0xFFE91E63),
-    ];
-
-    return SizedBox(
-      width: 140,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Artwork
-          Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colors[index % colors.length],
-                  colors[index % colors.length].withValues(alpha: 0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: AppRadius.cardRadius,
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.music_note_rounded,
-                color: Colors.white,
-                size: 40,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            titles[index % titles.length],
-            style: AppTypography.bodySmall(
-              color: context.appColors.textPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            artists[index % artists.length],
-            style: AppTypography.caption(
-              color: context.appColors.textSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Horizontal Playlist List (Mock) ──
 class _HorizontalPlaylistList extends StatelessWidget {
+  const _HorizontalPlaylistList({required this.playlists});
+
+  final List<dynamic> playlists;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 200,
+      height: 190,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: 4,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+        itemCount: playlists.length,
+        separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
-          final names = ['Workout Mix', 'Chill Vibes', 'Road Trip', 'Focus'];
-          final counts = ['24 tracks', '18 tracks', '32 tracks', '12 tracks'];
-
+          final playlist = playlists[index];
           return SizedBox(
-            width: 140,
+            width: 135,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 140,
-                  height: 140,
+                  width: 135,
+                  height: 135,
                   decoration: BoxDecoration(
                     color: context.appColors.surfaceVariant,
                     borderRadius: AppRadius.cardRadius,
@@ -359,23 +431,19 @@ class _HorizontalPlaylistList extends StatelessWidget {
                   child: Icon(
                     Iconsax.music_playlist,
                     color: context.appColors.textTertiary,
-                    size: 40,
+                    size: 36,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  names[index],
-                  style: AppTypography.bodySmall(
-                    color: context.appColors.textPrimary,
-                  ),
+                  playlist.name as String? ?? 'Playlist',
+                  style: AppTypography.bodySmall(color: context.appColors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  counts[index],
-                  style: AppTypography.caption(
-                    color: context.appColors.textSecondary,
-                  ),
+                  '${playlist.trackCount ?? 0} tracks',
+                  style: AppTypography.caption(color: context.appColors.textSecondary),
                 ),
               ],
             ),
@@ -386,15 +454,20 @@ class _HorizontalPlaylistList extends StatelessWidget {
   }
 }
 
-// ── Storage Usage Card ──
 class _StorageUsageCard extends StatelessWidget {
-  const _StorageUsageCard({this.user});
+  const _StorageUsageCard({
+    this.user,
+    required this.tracks,
+  });
 
   final Map<String, dynamic>? user;
+  final List<TrackModel> tracks;
 
   @override
   Widget build(BuildContext context) {
-    final usedBytes = (user?['storageUsedBytes'] as num?)?.toDouble() ?? 0.0;
+    final trackBytes = tracks.fold<double>(0.0, (acc, t) => acc + t.fileSizeBytes);
+    final userBytes = (user?['storageUsedBytes'] as num?)?.toDouble() ?? 0.0;
+    final usedBytes = trackBytes > 0 ? trackBytes : userBytes;
     final quotaBytes = (user?['storageQuotaBytes'] as num?)?.toDouble() ?? 5368709120.0;
     final progress = (quotaBytes > 0) ? (usedBytes / quotaBytes).clamp(0.0, 1.0) : 0.0;
 
@@ -415,7 +488,7 @@ class _StorageUsageCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Storage',
+                'Cloud Storage',
                 style: AppTypography.bodySemiBold(
                   color: context.appColors.textPrimary,
                 ),

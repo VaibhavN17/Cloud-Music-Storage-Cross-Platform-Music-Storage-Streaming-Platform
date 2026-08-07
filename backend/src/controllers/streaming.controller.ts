@@ -8,7 +8,8 @@ export class StreamingController {
   getStreamUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.id;
-      const trackId = req.params.trackId;
+      // Route is /:id/stream-url — param key is 'id', not 'trackId'.
+      const trackId = req.params.id ?? req.params.trackId;
       const data = await this.service.getSignedStreamUrl(trackId, userId);
       sendSuccess(res, data, 'Signed streaming URL generated');
     } catch (error) {
