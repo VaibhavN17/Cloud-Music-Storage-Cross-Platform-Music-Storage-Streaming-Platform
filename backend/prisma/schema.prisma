@@ -11,16 +11,20 @@ enum Role {
   USER
   MODERATOR
   ADMIN
+  ARTIST
 }
 
 enum Visibility {
   PRIVATE
   PUBLIC
+  UNLISTED
 }
 
 enum ReportType {
   ABUSE
   DMCA
+  COPYRIGHT
+  SPAM
 }
 
 enum ReportStatus {
@@ -277,4 +281,14 @@ model CollaborationSession {
   @@index([hostId])
   @@index([guestId])
   @@index([status])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
 }
