@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ReportType {
+  ABUSE
+  DMCA
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum CollaborationStatus {
+  PENDING
+  ACTIVE
+  ENDED
+  DECLINED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String?
+  displayName       String
+  avatarUrl         String?
+  bio               String?
+  role              Role      @default(USER)
+  emailVerified     Boolean   @default(false)
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?
+  storageUsedBytes  BigInt    @default(0)
+  storageQuotaBytes BigInt    @default(5368709120)
+  suspended         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  tracks          Track[]
+  folders         Folder[]
+  playlists       Playlist[]
+  favorites       Favorite[]
+  comments        Comment[]
+  reportsFiled    Report[]               @relation("ReportsFiled")
+  reportsReceived Report[]               @relation("ReportsReceived")
+  refreshTokens   RefreshToken[]
+  followers       Follow[]               @relation("Following")
+  following       Follow[]               @relation("Follower")
+  playbackHistory PlaybackHistory[]
+  notifications   Notification[]
+  hostedSessions  CollaborationSession[] @relation("SessionHost")
+  guestSessions   CollaborationSession[] @relation("SessionGuest")
+
+  @@index([email])
+}
+
+model Track {
+  id                  String     @id @default(cuid())
+  ownerId             String
+  owner               User       @relation(fields: [ownerId], references: [id])
+  folderId            String?
+  folder              Folder?    @relation(fields: [folderId], references: [id])
+  title               String
+  artist              String?
+  album               String?
+  genre               String?
+  durationMs          Int?
+  fileKey             String
+  artworkKey          String?
+  fileSizeBytes       BigInt
+  format              String
+  visibility          Visibility @default(PRIVATE)
+  ownershipAttestedAt DateTime?
+  playCount           Int        @default(0)
+  likeCount           Int        @default(0)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?
+
+  playlistTracks  PlaylistTrack[]
+  favorites       Favorite[]
+  comments        Comment[]
+  reports         Report[]
+  playbackHistory PlaybackHistory[]
+
+  @@index([ownerId])
+  @@index([visibility])
+  @@index([title])
+  @@index([artist])
+  @@index([deletedAt])
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  parentId  String?
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children  Folder[] @relation("FolderTree")
+  name      String
+  tracks    Track[]
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+model Playlist {
+  id         String          @id @default(cuid())
+  ownerId    String
+  owner      User            @relation(fields: [ownerId], references: [id])
+  name       String
+  coverUrl   String?
+  visibility Visibility      @default(PRIVATE)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  tracks     PlaylistTrack[]
+
+  @@index([ownerId])
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  trackId    String
+  track      Track    @relation(fields: [trackId], references: [id])
+  position   Int
+  addedAt    DateTime @default(now())
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, trackId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  trackId   String
+  track     Track     @relation(fields: [trackId], references: [id])
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([trackId])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  type           ReportType
+  status         ReportStatus @default(OPEN)
+  trackId        String?
+  track          Track?       @relation(fields: [trackId], references: [id])
+  reporterId     String
+  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id])
+  reportedUserId String?
+  reportedUser   User?        @relation("ReportsReceived", fields: [reportedUserId], references: [id])
+  reason         String
+  evidenceUrl    String?
+  resolvedById   String?
+  resolutionNote String?
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+
+  @@index([status])
+  @@index([type])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tokenHash String   @unique
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+}
+
+model PlaybackHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  trackId     String
+  track       Track    @relation(fields: [trackId], references: [id])
+  durationSec Int
+  deviceInfo  String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([trackId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  body      String
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+}
+
+model CollaborationSession {
+  id         String              @id @default(cuid())
+  hostId     String
+  host       User                @relation("SessionHost", fields: [hostId], references: [id])
+  guestId    String?
+  guest      User?               @relation("SessionGuest", fields: [guestId], references: [id])
+  guestEmail String?
+  status     CollaborationStatus @default(PENDING)
+  trackIds   String[]
+  startedAt  DateTime?
+  endedAt    DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([hostId])
+  @@index([guestId])
+  @@index([status])
+}
