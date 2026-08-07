@@ -9,9 +9,9 @@ datasource db {
 
 enum Role {
   USER
+  ARTIST
   MODERATOR
   ADMIN
-  ARTIST
 }
 
 enum Visibility {
@@ -32,6 +32,14 @@ enum ReportStatus {
   UNDER_REVIEW
   RESOLVED
   REJECTED
+}
+
+enum NotificationType {
+  NEW_FOLLOWER
+  TRACK_LIKE
+  NEW_COMMENT
+  SYSTEM_ALERT
+  REPORT_UPDATE
 }
 
 enum CollaborationStatus {
@@ -71,122 +79,151 @@ model User {
   following       Follow[]               @relation("Follower")
   playbackHistory PlaybackHistory[]
   notifications   Notification[]
+  storageUsage    StorageUsage[]
+  sessions        Session[]
+  settings        Settings?
   hostedSessions  CollaborationSession[] @relation("SessionHost")
   guestSessions   CollaborationSession[] @relation("SessionGuest")
 
   @@index([email])
+  @@index([role])
 }
 
 model Track {
-  id                  String     @id @default(cuid())
+  id                  String            @id @default(cuid())
   ownerId             String
-  owner               User       @relation(fields: [ownerId], references: [id])
+  owner               User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   folderId            String?
-  folder              Folder?    @relation(fields: [folderId], references: [id])
+  folder              Folder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
   title               String
   artist              String?
   album               String?
   genre               String?
+  composer            String?
+  year                Int?
+  trackNumber         Int?
+  discNumber          Int?
+  isrc                String?
+  lyrics              String?
+  bitrate             Int?
   durationMs          Int?
   fileKey             String
   artworkKey          String?
   fileSizeBytes       BigInt
   format              String
-  visibility          Visibility @default(PRIVATE)
+  visibility          Visibility        @default(PRIVATE)
   ownershipAttestedAt DateTime?
-  playCount           Int        @default(0)
-  likeCount           Int        @default(0)
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+
+  playCount           Int               @default(0)
+  likeCount           Int               @default(0)
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
 
-  playlistTracks  PlaylistTrack[]
-  favorites       Favorite[]
-  comments        Comment[]
-  reports         Report[]
-  playbackHistory PlaybackHistory[]
+  playlistTracks      PlaylistTrack[]
+  favorites           Favorite[]
+  comments            Comment[]
+  reports             Report[]
+  playbackHistory     PlaybackHistory[]
 
   @@index([ownerId])
+  @@index([folderId])
   @@index([visibility])
   @@index([title])
   @@index([artist])
+  @@index([genre])
   @@index([deletedAt])
+  @@index([visibility, deletedAt])
 }
 
 model Folder {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id])
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   parentId  String?
-  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id])
-  children  Folder[] @relation("FolderTree")
+  parent    Folder?   @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]  @relation("FolderTree")
   name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   tracks    Track[]
-  createdAt DateTime @default(now())
 
   @@index([ownerId])
+  @@index([parentId])
 }
 
 model Playlist {
-  id         String          @id @default(cuid())
-  ownerId    String
-  owner      User            @relation(fields: [ownerId], references: [id])
-  name       String
-  coverUrl   String?
-  visibility Visibility      @default(PRIVATE)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  tracks     PlaylistTrack[]
+  id          String          @id @default(cuid())
+  ownerId     String
+  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  coverUrl    String?
+  visibility  Visibility      @default(PRIVATE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tracks      PlaylistTrack[]
 
   @@index([ownerId])
+  @@index([visibility])
 }
 
 model PlaylistTrack {
-  id         String   @id @default(cuid())
-  playlistId String
-  playlist   Playlist @relation(fields: [playlistId], references: [id])
-  trackId    String
-  track      Track    @relation(fields: [trackId], references: [id])
-  position   Int
-  addedAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  playlistId  String
+  playlist    Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  trackId     String
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  position    Int
+  addedAt     DateTime @default(now())
 
   @@unique([playlistId, trackId])
   @@index([playlistId])
+  @@index([trackId])
 }
 
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   trackId   String
-  track     Track    @relation(fields: [trackId], references: [id])
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, trackId])
+  @@index([userId])
 }
 
 model Follow {
-  id          String   @id @default(cuid())
-  followerId  String
-  follower    User     @relation("Follower", fields: [followerId], references: [id])
-  followingId String
-  following   User     @relation("Following", fields: [followingId], references: [id])
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  followerId   String
+  follower     User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId  String
+  following    User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
 
   @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model Comment {
   id        String    @id @default(cuid())
   trackId   String
-  track     Track     @relation(fields: [trackId], references: [id])
+  track     Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User      @relation(fields: [authorId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   body      String
   createdAt DateTime  @default(now())
   deletedAt DateTime?
 
   @@index([trackId])
+  @@index([authorId])
 }
 
 model Report {
@@ -194,11 +231,11 @@ model Report {
   type           ReportType
   status         ReportStatus @default(OPEN)
   trackId        String?
-  track          Track?       @relation(fields: [trackId], references: [id])
+  track          Track?       @relation(fields: [trackId], references: [id], onDelete: SetNull)
   reporterId     String
-  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id])
+  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
   reportedUserId String?
-  reportedUser   User?        @relation("ReportsReceived", fields: [reportedUserId], references: [id])
+  reportedUser   User?        @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: SetNull)
   reason         String
   evidenceUrl    String?
   resolvedById   String?
@@ -208,16 +245,17 @@ model Report {
 
   @@index([status])
   @@index([type])
+  @@index([reporterId])
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  tokenHash String   @unique
-  revoked   Boolean  @default(false)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  revoked    Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }
@@ -229,39 +267,77 @@ model AuditLog {
   targetType String
   targetId   String
   metadata   Json?
+  ipAddress  String?
+  userAgent  String?
   createdAt  DateTime @default(now())
 
   @@index([actorId])
+  @@index([action])
   @@index([targetType, targetId])
 }
 
 model PlaybackHistory {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   trackId     String
-  track       Track    @relation(fields: [trackId], references: [id])
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  playedAt    DateTime @default(now())
   durationSec Int
   deviceInfo  String?
-  createdAt   DateTime @default(now())
 
   @@index([userId])
   @@index([trackId])
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  type      String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
   title     String
-  body      String
+  message   String
+  read      Boolean          @default(false)
   data      Json?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 
   @@index([userId])
   @@index([read])
+}
+
+model StorageUsage {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usedBytes  BigInt
+  quotaBytes BigInt
+  recordedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Settings {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications  Boolean @default(true)
+  pushNotifications   Boolean @default(true)
+  autoPlayNext        Boolean @default(true)
+  audioQuality        String  @default("high")
+  theme               String  @default("dark")
 }
 
 model CollaborationSession {
@@ -281,14 +357,4 @@ model CollaborationSession {
   @@index([hostId])
   @@index([guestId])
   @@index([status])
-}
-
-model Settings {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([key])
 }
